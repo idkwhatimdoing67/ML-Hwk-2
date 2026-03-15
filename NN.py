@@ -12,21 +12,40 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, OneHotEncoder, LabelEncoder
+from scipy.stats import shapiro
 
 
 class NeuralNet:
     def __init__(self, dataFile, header=True):
         self.raw_input = pd.read_csv(dataFile)
-
+        self.processed_data = None
 
 
 
     # TODO: Write code for pre-processing the dataset, which would include
     # standardization, normalization,
     #   categorical to numerical, etc
+    
+    # Idea to check p-value to determine pre-processing route.
+    # New to shapiro method so this will be a test
     def preprocess(self):
-        self.processed_data = self.raw_input
+        df = self.raw_input.copy() # Copy data to preprocessing df
+        
+        # Iterate through df, working on a col at a time
+        for col_name in df.columns:
+            col_data = df[col_name]
 
+            # Handle numeric columns first:
+            
+            if np.issubdtype(col_data.dtype, np.number):
+                
+                # First use IQR to test if col is worth p-value test
+                Q1 = col_data.quantile(.25)
+                Q3 = col_data.quantile(.75)
+                IQR = Q3 - Q1
+                outlier_mask = (col_data < (Q1-1.5*IQR) | (col_data > (Q3 +1.5*IQR)))
+                
         return 0
 
     # TODO: Train and evaluate models for all combinations of parameters
