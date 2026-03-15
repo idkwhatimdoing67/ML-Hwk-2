@@ -18,7 +18,7 @@ from scipy.stats import shapiro
 
 class NeuralNet:
     def __init__(self, dataFile, header=True):
-        self.raw_input = pd.read_csv(dataFile)
+        self.raw_input = pd.read_csv(dataFile, sep=';') #Adjusted for csv type
         self.processed_data = None
 
 
@@ -38,13 +38,13 @@ class NeuralNet:
 
             # Handle numeric columns first:
             
-            if np.issubdtype(col_data.dtype, np.number):
-                
+            # Change numpy dtype check to pandas
+            if pd.api.types.is_numeric_dtype(col_data):
                 # First use IQR to test if col is worth p-value test
                 Q1 = col_data.quantile(.25)
                 Q3 = col_data.quantile(.75)
                 IQR = Q3 - Q1
-                outlier_mask = (col_data < (Q1-1.5*IQR) | (col_data > (Q3 +1.5*IQR)))
+                outlier_mask = ((col_data < (Q1 - 1.5 * IQR)) | (col_data > (Q3 + 1.5 * IQR)))
                 
                 # Decision logic
                 if outlier_mask.sum() / len(col_data) > 0.05:
@@ -52,7 +52,7 @@ class NeuralNet:
                     scaler = RobustScaler()
                 else:
                     # Now we check for normality to see if we use normal or min/max scaling
-                    stat, p = shapiro(col_data.dropna().iloc[5000])
+                    stat, p = shapiro(col_data.dropna().iloc[:5000])
                     if p > 0.05:
                         scaler = StandardScaler() # Proper normalization
                     else:
@@ -73,6 +73,7 @@ class NeuralNet:
                     df = pd.concat([df, dummies], axis=1)
                     df.drop(col_name, axis=1, inplace=True)
         self.processed_data = df
+        self.processed_data = df.astype(float) # Should turn T/F into 1/0
         return self.processed_data
 
     # TODO: Train and evaluate models for all combinations of parameters
@@ -114,5 +115,8 @@ class NeuralNet:
 
 if __name__ == "__main__":
     neural_network = NeuralNet("student-mat.csv") # put in path to your file
-    neural_network.preprocess()
+    processed_df = neural_network.preprocess()
     neural_network.train_evaluate()
+    
+    print(processed_df.head())
+    print(processed_df.info())
