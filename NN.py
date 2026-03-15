@@ -46,7 +46,34 @@ class NeuralNet:
                 IQR = Q3 - Q1
                 outlier_mask = (col_data < (Q1-1.5*IQR) | (col_data > (Q3 +1.5*IQR)))
                 
-        return 0
+                # Decision logic
+                if outlier_mask.sum() / len(col_data) > 0.05:
+                    # If we have too many outliers, then no use in p value test
+                    scaler = RobustScaler()
+                else:
+                    # Now we check for normality to see if we use normal or min/max scaling
+                    stat, p = shapiro(col_data.dropna().iloc[5000])
+                    if p > 0.05:
+                        scaler = StandardScaler() # Proper normalization
+                    else:
+                        scaler = MinMaxScaler() # Still skewed
+                
+                # Once chosen, we transform for the scaler
+                df[col_name] = scaler.fit_transform(df[[col_name]])
+                
+            # Handle categorical data
+            else:
+                # Binary means we can use labelencoder
+                if col_data.nunique() <= 2:
+                    le = LabelEncoder()
+                    df[col_name] = le.fit_transform(col_data)
+                else:
+                    # More than 2, we use One-Hot Encoding
+                    dummies = pd.get_dummies(df[col_name], prefix=col_name)
+                    df = pd.concat([df, dummies], axis=1)
+                    df.drop(col_name, axis=1, inplace=True)
+        self.processed_data = df
+        return self.processed_data
 
     # TODO: Train and evaluate models for all combinations of parameters
     # specified in the init method. We would like to obtain following outputs:
