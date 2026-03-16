@@ -97,7 +97,7 @@ class NeuralNet:
         
         # Storage for results
         results = []
-        plt.figure(figsize=(12,8))
+        history_dict = {} # New plot dictionary
         
         # Iterate through all combinations of hypers
         for act in activations:
@@ -149,20 +149,29 @@ class NeuralNet:
                         })
                         
                         # Store history for plot
-                        plt.plot(model.loss_curve_, label=f"{act} | lr {lr} | L{layers}")
-        
-        # Display training table
+                        history_dict[hyperparams] = model.loss_curve_ #adjusted to store plot info
+            
+        # Print the Table
         results_df = pd.DataFrame(results)
         print("\nTraining Phase Results")
         print(results_df.to_string(index=False))
-        
-        # Plot setup
-        plt.title("Model History")
-        plt.xlabel("Epochs")
-        plt.ylabel("Loss (Error)")
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
-        plt.tight_layout()
-        plt.show()
+
+        # Create 3 Figures
+        for target_act in ['logistic', 'tanh', 'relu']:
+            plt.figure(figsize=(10, 6)) 
+            for label, curve in history_dict.items():
+                if label.startswith(target_act):
+                    plt.plot(curve, label=label)
+
+            plt.title(f"Model History: {target_act.upper()} Activation")
+            plt.xlabel("Epochs")
+            plt.ylabel("Loss (Error)")
+            
+            # Place legend outside to the right
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
+            
+            plt.tight_layout() 
+            plt.show()
 
         # Create the neural network and be sure to keep track of the performance
         #   metrics
