@@ -14,18 +14,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, OneHotEncoder, LabelEncoder
 from scipy.stats import shapiro
+from sklearn.neural_network import MLPClassifier
+import matplotlib.pyplot as plt
 
 
 class NeuralNet:
     def __init__(self, dataFile, header=True):
         self.raw_input = pd.read_csv(dataFile, sep=';') #Adjusted for csv type
         self.processed_data = None
-
-
-
-    # TODO: Write code for pre-processing the dataset, which would include
-    # standardization, normalization,
-    #   categorical to numerical, etc
     
     # Idea to check p-value to determine pre-processing route.
     # New to shapiro method so this will be a test
@@ -85,20 +81,73 @@ class NeuralNet:
     #       different color for each model
 
     def train_evaluate(self):
+        
+        # Provided data prep
         ncols = len(self.processed_data.columns)
         nrows = len(self.processed_data.index)
         X = self.processed_data.iloc[:, 0:(ncols - 1)]
         y = self.processed_data.iloc[:, (ncols-1)]
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y)
-
-        # Below are the hyperparameters that you need to use for model evaluation
-        # You can assume any fixed number of neurons for each hidden layer. 
+            X, y) 
         
         activations = ['logistic', 'tanh', 'relu']
         learning_rate = [0.01, 0.1]
         max_iterations = [100, 200] # also known as epochs
         num_hidden_layers = [2, 3]
+        
+        # Storage for results
+        results = []
+        plt.figure(figsize=(12,8))
+        
+        # Iterate through all combinations of hypers
+        for act in activations:
+            for lr in learning_rate:
+                for layers in num_hidden_layers:
+                    for epochs in max_iterations:
+                        
+                        # Setup our hidden layers
+                        # Note: this test uses 10 as arbitrary number, subject to change
+                        hidden_config = tuple([10] * layers)
+                        
+                        # Actual MLPClassifier model setup, we intialize our loop vars so we can iterate thru all
+                        model = MLPClassifier(
+                            hidden_layer_sizes = hidden_config,
+                            activation = act,
+                            learning_rate= lr,
+                            max_iter = epochs,
+                            random_state = 42 
+                        ) 
+                        
+                        # Train
+                        model.fit(X_train, y_train)
+                        
+                        # Capture training stats
+                        train_acc = model.score(X_train, y_train)
+                        train_error = model.loss_
+                        
+                        # Store data for output table, append each iteration/result
+                        hyperparams = f"{act}, lr={lr}, layers={layers}, epochs={epochs}"
+                        results.append({
+                            "Hyperparameters": hyperparams,
+                            "Train Acc": f"{train_acc:.2%}",
+                            "Train Error": f"{train_error:.4f}"
+                        })
+                        
+                        # Store history for plot
+                        plt.plot(model.loss_curve_, label=f"{act} | lr {lr} | L{layers}")
+        
+        # Display training table
+        results_df = pd.DataFrame(results)
+        print("\nTraining Phase Results")
+        print(results_df.to_string(index=False))
+        
+        # Plot setup
+        plt.title("Model History")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss (Error)")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
+        plt.tight_layout()
+        plt.show()
 
         # Create the neural network and be sure to keep track of the performance
         #   metrics
@@ -115,8 +164,6 @@ class NeuralNet:
 
 if __name__ == "__main__":
     neural_network = NeuralNet("student-mat.csv") # put in path to your file
-    processed_df = neural_network.preprocess()
+    neural_network.preprocess()
     neural_network.train_evaluate()
-    
-    print(processed_df.head())
-    print(processed_df.info())
+
