@@ -16,6 +16,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, On
 from scipy.stats import shapiro
 from sklearn.neural_network import MLPClassifier
 import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
 
 
 class NeuralNet:
@@ -120,6 +121,19 @@ class NeuralNet:
                         # Train
                         model.fit(X_train, y_train)
                         
+                        # Test section
+                        # Prediction
+                        train_preds = model.predict(X_train)
+                        test_preds = model.predict(X_test)
+                        
+                        # Accuracy
+                        train_acc = model.score(X_train, y_train)
+                        test_acc = model.score(X_test, y_test)
+                        
+                        # Error
+                        train_mse = mean_squared_error(y_train, train_preds)
+                        test_mse = mean_squared_error(y_test, test_preds)
+                        
                         # Capture training stats
                         train_acc = model.score(X_train, y_train)
                         train_error = model.loss_
@@ -129,7 +143,9 @@ class NeuralNet:
                         results.append({
                             "Hyperparameters": hyperparams,
                             "Train Acc": f"{train_acc:.2%}",
-                            "Train Error": f"{train_error:.4f}"
+                            "Test Acc": f"{test_acc:.2%}",
+                            "Train MSE": f"{train_mse:.4f}",
+                            "Test MSE": f"{test_mse:.4f}"
                         })
                         
                         # Store history for plot
