@@ -87,8 +87,7 @@ class NeuralNet:
         nrows = len(self.processed_data.index)
         X = self.processed_data.iloc[:, 0:(ncols - 1)]
         y = self.processed_data.iloc[:, (ncols-1)]
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y) 
+        X_train, X_test, y_train, y_test = train_test_split(X, y) 
         
         activations = ['logistic', 'tanh', 'relu']
         learning_rate = [0.01, 0.1]
@@ -113,7 +112,7 @@ class NeuralNet:
                         model = MLPClassifier(
                             hidden_layer_sizes = hidden_config,
                             activation = act,
-                            learning_rate= lr,
+                            learning_rate_init = lr,
                             max_iter = epochs,
                             random_state = 42 
                         ) 
